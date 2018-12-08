@@ -77,17 +77,11 @@ def stochTrainNetwork(batch, learningRate, neuronsPerLayer, targets, weights):
     errors, grads = [], []
     numCorrect = 0
     numCorrect2 = 0
-
     #initialize gradient
     for layer in range(len(neuronsPerLayer) - 1):
         grads.append(np.array([[0.] * neuronsPerLayer[layer]]* neuronsPerLayer[layer + 1]))
-
-
     #Loop through all input vectors, train the network, plot the error
     for p in range(len(batch)):
-        #PS: Enable this to check if the forward and backward pass are still consistent.
-        #    Warning, it's very slow. Use a small network.
-        #ff.gradientCheck(weights, batch[p], targets[p])
 
         #forward pass through network, find all activations
         activations = ff.forwardprop(batch[p], weights)
@@ -110,7 +104,6 @@ def stochTrainNetwork(batch, learningRate, neuronsPerLayer, targets, weights):
 
         if (p % 50) == 0:
             acc = (numCorrect / (p + 1)) * 100
-            #print("[iter: ", p, " loss: ", np.average(np.asarray(errors)), " right: ", numCorrect, " acc: ", acc, "%]")
 
     #update weights
     weights = stochUpdateWeights(weights, grads)
@@ -227,5 +220,9 @@ def mainstoch(trfile, tefile, params, neuronsPerLayer=[784, 625, 625, 10], savep
 
 if __name__ == '__main__':
 
-    params=[7, 500, .001, 10, 100]
-    mainstoch("mnist_train.csv", "mnist_test.csv", params)
+    params=[5, 500, .001, 10, 100]
+    trloss, teloss, tracc, teacc = mainstoch("mnist_train.csv", "mnist_test.csv", params)
+    print("Lowest Recorded Training loss: ", trloss)
+    print("Lowest Recorded Test loss: ", teloss)
+    print("Highest training accuracy: ", tracc)
+    print("Highest test accuracy: ", teacc)
