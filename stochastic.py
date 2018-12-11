@@ -76,7 +76,7 @@ def grad(learningRate, deltas, activations, allgrads):
 def stochTrainNetwork(batch, learningRate, neuronsPerLayer, targets, weights):
     errors, grads = [], []
     numCorrect = 0
-    numCorrect2 = 0
+
     #initialize gradient
     for layer in range(len(neuronsPerLayer) - 1):
         grads.append(np.array([[0.] * neuronsPerLayer[layer]]* neuronsPerLayer[layer + 1]))
@@ -101,9 +101,6 @@ def stochTrainNetwork(batch, learningRate, neuronsPerLayer, targets, weights):
         #Did the network guess right?
         if np.argmax(activations[-1]) == np.argmax(targets[p]):
             numCorrect += 1
-
-        if (p % 50) == 0:
-            acc = (numCorrect / (p + 1)) * 100
 
     #update weights
     weights = stochUpdateWeights(weights, grads)

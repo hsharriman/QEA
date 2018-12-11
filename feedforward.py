@@ -30,7 +30,8 @@ def calcLayerOutputs(inputVec, weights):
 
 def crossEntError(netOutput, target):
     #Takes 2 vectors of same dimensions, returns the sum-of-squares error
-    return -1 * np.sum(target * np.log(netOutput))
+    clip = 1e-10
+    return -1 * np.sum(target * np.log(np.maximum(netOutput, clip)))
 
 def sumOfSquareErr(output, target):
     return 0.5 * np.sum(np.power(output - target, 2))
@@ -258,7 +259,7 @@ def visualize(patterns, targets, goodOnes):
         plt.imshow(pixels, cmap='gray')
         plt.show()
 
-def testNetwork(patterns, targets, weights, good, *showNums):
+def testNetwork(patterns, targets, weights, good=True, showNums=False):
     errors = []
     numCorrect = 0
     numCorrect2 = 0
@@ -266,7 +267,7 @@ def testNetwork(patterns, targets, weights, good, *showNums):
     badOnes = []
 
     #Initialize error plot
-    fig, ax = plt.subplots()
+    #fig, ax = plt.subplots()
 
     #Loop through all input vectors, train the network, plot the error
     for p in range(len(patterns)):
@@ -279,15 +280,10 @@ def testNetwork(patterns, targets, weights, good, *showNums):
 
         #add to list of errors
         errors.append(error)
-        print("Guess/label: ", np.argmax(activations[-1]), np.argmax(targets[p]))
 
         #Did the network guess right?
         if np.argmax(activations[-1]) == np.argmax(targets[p]):
             numCorrect += 1
-
-        #Other check
-        if int(error) == 0:
-            numCorrect2 += 1
             goodOnes.append((p, np.argmax(activations[-1])))
 
         if int(error) >= 1:
@@ -297,14 +293,13 @@ def testNetwork(patterns, targets, weights, good, *showNums):
     acc = (numCorrect / len(patterns)) * 100
 
     #plot the error
-    ax.plot(errors, marker= '.')
-    ax.set(xlabel = 'Iteration', ylabel= 'Cross Entropy Error', title= 'Network Error Graph')
-    plt.show()
-
-    print("difference: ", (activations[-1] - targets[-1]))
-    print("accuracy: ", acc, "%")
-    print("number of correct guesses: ", numCorrect)
-    print("# times Network Error was zero: ", numCorrect2)
+    # ax.plot(errors, marker= '.')
+    # ax.set(xlabel = 'Iteration', ylabel= 'Cross Entropy Error', title= 'Test Set Error')
+    # plt.show()
+    #
+    # print("difference: ", (activations[-1] - targets[-1]))
+    # print("accuracy: ", acc, "%")
+    # print("number of correct guesses: ", numCorrect)
 
     #visualize the numbers that were guessed correctly
     if showNums:
@@ -313,7 +308,7 @@ def testNetwork(patterns, targets, weights, good, *showNums):
         if not good:
             visualize(patterns, targets, badOnes)
 
-    return numCorrect2
+    return np.average(np.asarray(errors)), acc
 
 def make_dataset(trainfile, testfile):
     #Takes name of training set and test set, breaks into input vectors and targets
