@@ -123,8 +123,7 @@ def train_stochastically(allpats, alltargs, imgte, tarte, learningRate, neuronsP
     #takes pre-shuffled and separated batches, trains network in batches
     losses, accs, testloss, testacc = [], [], [], []
     weights = loadweights(neuronsPerLayer, filename=filename)
-
-    #first batch
+    #loops through all batches in epoch
     for batch in range(len(allpats)):
         weights, loss, acc = stochTrainNetwork(allpats[batch], learningRate, neuronsPerLayer, alltargs[batch], weights)
 
@@ -142,7 +141,7 @@ def train_stochastically(allpats, alltargs, imgte, tarte, learningRate, neuronsP
             t, a = ff.testNetwork(imgte, tarte, weights)
             testloss.append(t)
             testacc.append(a)
-
+    [print(weights[i].shape) for i in range(len(weights))]
     return weights, losses, accs, testloss, testacc
 
 def plotsave(trloss, teloss, tracc, teacc, weights, savepaths):
@@ -218,7 +217,7 @@ def mainstoch(trfile, tefile, params, neuronsPerLayer=[784, 625, 625, 10], savep
 if __name__ == '__main__':
 
     params=[5, 500, .001, 10, 100]
-    trloss, teloss, tracc, teacc = mainstoch("mnist_train.csv", "mnist_test.csv", params)
+    trloss, teloss, tracc, teacc = mainstoch("mnist_train_100.csv", "mnist_test_10.csv", params)
     print("Lowest Recorded Training loss: ", trloss)
     print("Lowest Recorded Test loss: ", teloss)
     print("Highest training accuracy: ", tracc)
