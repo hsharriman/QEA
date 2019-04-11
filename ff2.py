@@ -1,7 +1,13 @@
-"""Trains and tests a feed-forward neural network on the MNIST dataset of
+"""
+Trains and tests a feed-forward neural network on the MNIST dataset of
 hand-written digits using numpy.
 
 Author: Hwei-Shin Harriman
+
+NOTES ABOUT RUNNING THE NETWORK:
+1) In terminal: $ python ff2.py
+2) (optional) to continue training with most recently saved weights:
+  At the bottom of the file, set restore=True then re-run the program.
 """
 import numpy as np
 import math
@@ -351,7 +357,7 @@ class SoftmaxOut(Layer):
         self.deltas = self.output - tar
 
 class Network:
-    def __init__(self, data, lrate, epochs, neuronsPerLayer):
+    def __init__(self, data, learningRate, epochs, neuronsPerLayer):
         """Base class to run a neural network.
 
         data: DataSet object containing training and test vectors
@@ -365,7 +371,7 @@ class Network:
         test data set
         """
         self.data = data    #needs to be initialized outside of class
-        self.lrate = lrate
+        self.lrate = learningRate
         self.epochs = epochs
         self.npl = neuronsPerLayer
         self.layers = []
@@ -494,7 +500,7 @@ class Utils(Network):
             plt.title(titles[i])
         plt.show()
 
-    def plotsave(self, savepaths, isDebugging):
+    def plotsave(self, savepaths):
         """Save and plot training loss/accuracy, and test loss/accuracy.
 
         savepaths: list of pickle files to save to"""
@@ -615,6 +621,7 @@ class RunNetwork(Utils):
             if (b % testInt == 0) and b > 0:
                 print("Testing . . .")
                 self.test()
+                print("[Test Results -- Loss: ", self.testloss[-1], "Accuracy: ", self.testacc[-1], "%]")
 
             #pause training to pickle weights
             if (b % saveInt) == 0:
@@ -641,18 +648,19 @@ class RunNetwork(Utils):
 
         #how many times to pass through entire dataset
         for i in range(self.epochs):
-            print("Starting new epoch: ", i)
+            print("Starting new epoch: ", i+1, "out of ", self.epochs)
             #Shuffle training data
             self.data.makeBatches()
             #run network for one epoch
             self.run_one_epoch(testInt, saveInt)
 
         #visualize and store results
-        self.plotsave(savepaths)
         self.printResults()
+        self.plotsave(savepaths)
 
 class DebuggingTests(RunNetwork):
-    """Class containing methods to validate correctness of network implementation
+    """Class containing methods to validate correctness of network implementation.
+    Creates a smaller, dummy network to run tests
 
     input: single image vector
     out: corresponding target vector
@@ -768,10 +776,11 @@ class DebuggingTests(RunNetwork):
 
 if __name__ == "__main__":
     savepaths = ['trl1.pckl', 'tel1.pckl', 'tra1.pckl', 'tea1.pckl']
-    data = DataSet("mnist_train.csv", "mnist_test.csv", 500)
-    stoch = RunNetwork(data, .001, 1, [784, 625, 625, 10])
+    data = DataSet("mnist_train.csv", "mnist_test.csv", batchsize=500)
+    npl = [784, 625, 625, 10]
+    stoch = RunNetwork(data, lrate=.001, epochs=5, neuronsPerLayer=npl)
     #Uncomment to run the network!
-    stoch.run(10, 100, False, savepaths)
+    stoch.run(testInt=10, saveInt=100, restore=False, savepaths=savepaths)
 
     #FOR TESTING (uncomment to run gradient tests)
     # testimg = data.batchImg[0][0]
