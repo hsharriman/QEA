@@ -694,7 +694,7 @@ class DebuggingTests(RunNetwork):
         #visualize results
         self.makePlots([errors, self.trainacc], isDebugging=True)
 
-    def numericalDiff(self, layersCopy, layer, j, k, eps, shouldSubtract):
+    def numericalDiff(self, layersCopy, layer, j, k, eps, sub):
         """Helper function to perform numerical differentiation. Calculates
         error of network with one component of weights matrix slightly adjusted.
 
@@ -702,11 +702,11 @@ class DebuggingTests(RunNetwork):
         layer: current layer being tested
         j, k: index of current weight component being tested
         eps: small positive value to add/subtract from current weight
-        shouldSubtract: bool, True=eps should be subtracted. False=eps should
+        neg: bool, True=eps should be subtracted. False=eps should
         be added
         """
         #set eps based on whether adding or subtracting
-        if shouldSubtract:
+        if sub:
             eps = eps * -1
 
         #add eps to a single weight component
@@ -728,30 +728,37 @@ class DebuggingTests(RunNetwork):
         return error
 
     def gradientCheck(self):
-        """
+        """Compares implementation of backpropagation to numerical differentiation.
+        Returns number of incorrect gradient components in network.
+        WARNING: Very slow, use on a small network
         """
         numBroken = 0
-        layers1 = copy.deepcopy(self.layers)
-        layers2 = copy.deepcopy(self.layers)
+        #make 2 copies of the network
+        net1 = copy.deepcopy(self.layers)
+        net2 = copy.deepcopy(self.layers)
 
+        #calculate gradient using backpropagation
         self.forwardpass(self.input)
         self.backpass(self.out)
         self.findAllGradients(self.input)
 
-        [print(layer.weights.shape) for layer in self.layers]
-
         # Check each component of the gradient via numerical differentiation
-        # WARNING: Very slow
-        eps = 1e-9
-        for layer in range(len(layers1)):
-            for j in range(layers1[layer].row):
-                for k in range(layers1[layer].col):
-                    error1 = self.numericalDiff(layers1, layer, j, k, eps, shouldSubtract=False)
-                    error2 = self.numericalDiff(layers2, layer, j, k, eps, shouldSubtract=True)
+        #WARNING: Very slow
+        eps = 1e-9  #half the acceptable range of error
+        for layer in range(len(net1)):
+            for j in range(net1[layer].row):
+                for k in range(net1[layer].col):
+                    #calculate errors
+                    #(eps added to net1, subtracted from net2)
+                    error1 = self.numericalDiff(net1, layer, j, k, eps, sub=False)
+                    error2 = self.numericalDiff(net2, layer, j, k, eps, sub=True)
+
                     # Check gradient component vs central difference
-                    numGrad = self.lrate * (error1 - error2) / (2*eps)
+                    centDiff = self.lrate * (error1 - error2) / (2*eps)
                     grad = self.layers[layer].gradient[j, k]
-                    if (abs(grad - numGrad) > 1e-4):
+
+                    #if not within acceptable range of error
+                    if (abs(grad - centDiff) > 1e-4):
                         numBroken += 1
                         print("[", layer, ", ", j, ", ", k, "]")
                         print("ERROR: Wrong gradient component")
@@ -763,15 +770,13 @@ if __name__ == "__main__":
     savepaths = ['trl1.pckl', 'tel1.pckl', 'tra1.pckl', 'tea1.pckl']
     data = DataSet("mnist_train.csv", "mnist_test.csv", 500)
     stoch = RunNetwork(data, .001, 1, [784, 625, 625, 10])
+    #Uncomment to run the network!
+    stoch.run(10, 100, False, savepaths)
 
-
-    # stoch.run(10, 100, False, savepaths)
-
-    #FOR TESTING
-    testimg = data.batchImg[0][0]
-    testtarg = data.batchTar[0][0]
-    print(len(testimg), len(testtarg))
-    debug = DebuggingTests(testimg, testtarg, .001, [784, 200, 10])
-    debug.oneImgTest(150)
-    broke = debug.gradientCheck()
-    print(broke)
+    #FOR TESTING (uncomment to run gradient tests)
+    # testimg = data.batchImg[0][0]
+    # testtarg = data.batchTar[0][0]
+    # debug = DebuggingTests(testimg, testtarg, .001, [784, 200, 10])
+    # debug.oneImgTest(150)
+    # broke = debug.gradientCheck()
+    # print("Number of incorrect gradient components", broke)
