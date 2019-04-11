@@ -552,49 +552,87 @@ class RunNetwork(Utils):
                 self.findAllGradients(curr_img)
 
             #calculate error
-            # print(curr_tar, self.layers[-1].output)
             errors.append(self.layers[-1].crossEntError(curr_tar))
 
-            # #Did the network guess right?
+            # Did the network guess right?
             if np.argmax(self.layers[-1].output) == np.argmax(curr_tar):
                 correct += 1
         return [errors, correct]
 
     def train(self, batch):
-        batchimg = self.data.batchImg[batch]
-        batchtar = self.data.batchTar[batch]
+        """Trains network on one batch, updates weights, and adds loss/accuracy
+        results to compiled list.
 
-        results = self.feedNet(batchimg, batchtar, True)
-        # print(len(results[0]), results[0], results[1])
+        batch: int representing batch currently being passed through network
+        """
+        #select a batch
+        imgs = self.data.batchImg[batch]
+        targs = self.data.batchTar[batch]
+
+        #results: array of len 2, 1st entry = list of errors from batch,
+        #2nd entry = number of correct guesses in batch
+        results = self.feedNet(imgs, targs, True)
+
+        #update all weights in network
         [layer.update() for layer in self.layers]
 
+        #add loss/accuracy to compiled lists for training set
         self.trainloss.append(np.average(np.asarray(results[0])))
-        self.trainacc.append((results[1] / len(batchimg)) * 100)
+        self.trainacc.append((results[1] / len(imgs)) * 100)
 
     def test(self):
+        """Passes test image set through network once to check quality of
+        current weights. Does not update weights.
+        """
+        #use the full test set
         testimgs = self.data.test.img
         testtargs = self.data.test.tar
 
+        #feed test set through network (without calculating gradient) to compile
+        #losses and accuracy
         results = self.feedNet(testimgs, testtargs, False)
 
+        #add loss/accuracy to compiled lists for test set
         self.testloss.append(np.average(np.asarray(results[0])))
         self.testacc.append((results[1] / len(testimgs)) * 100)
 
     def run_one_epoch(self, testInt, saveInt):
-        # self.loadNetWeights(restore)
-        for b in range(len(self.data.batchImg)):    #batches in epoch
+        """Passes entire shuffled training set through network once, updating
+        weights after every batch. Periodically pauses training to run test set
+        through network with current weights. Periodically pauses training to
+        save most recent weights.
+
+        testInt: number of batches to train on between test runs
+        saveInt: number of batches to train on between saving checkpoints
+        """
+        #loop through each batch
+        for b in range(len(self.data.batchImg)):
+            #train network on current batch
             self.train(b)
             print("[Batch: ", b, " Loss: ", self.trainloss[-1], " Accuracy: ", self.trainacc[-1], "%]")
 
+            #pause training to run test network on current weights
             if (b % testInt == 0) and b > 0:
                 print("Testing . . .")
                 self.test()
 
+            #pause training to pickle weights
             if (b % saveInt) == 0:
                 print("Checkpoint, pickling network. . .")
                 self.saveNetWeights()
 
     def run(self, testInt, saveInt, restore, savepaths):
+        """Runs network for self.epochs iterations. Before each iteration,
+        re-shuffles training set. Plots and saves results when training is
+        complete.
+
+        testInt: num batches to train on between test runs
+        saveInt: num batches to train on between saving checkpoints
+        restore: bool, True=load most recently pickled weights, False=initialize
+        new weights
+        savepaths: array containing filepaths to save checkpoints
+        """
+        #close all previously opened plots (if any)
         plt.close('all')
 
         #load and pre-process the data
@@ -606,9 +644,10 @@ class RunNetwork(Utils):
             print("Starting new epoch: ", i)
             #Shuffle training data
             self.data.makeBatches()
-            # self.data.visualize(self.data.batchImg[0][0:10], self.data.batchTar[0][0:10])
+            #run network for one epoch
             self.run_one_epoch(testInt, saveInt)
 
+        #visualize and store results
         self.plotsave(savepaths)
         self.printResults()
 
