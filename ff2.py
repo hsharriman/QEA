@@ -652,36 +652,84 @@ class RunNetwork(Utils):
         self.printResults()
 
 class DebuggingTests(RunNetwork):
-    def __init__(self, inputVec, out, lrate, epochs, neuronsPerLayer):
+    """Class containing methods to validate correctness of network implementation
+
+    input: single image vector
+    out: corresponding target vector
+    lrate: learning rate
+    neuronsPerLayer: array containing number of neurons on each layer of the
+    network
+    """
+    def __init__(self, inputVec, out, lrate, neuronsPerLayer):
         data = DataSet("mnist_train_100.csv", "mnist_test_10.csv", 1)
         data.makeBatches()
-        super().__init__(data, lrate, epochs, neuronsPerLayer)
-        self.makeLayers()
+        super().__init__(data, lrate, 1, neuronsPerLayer)
         self.loadNetWeights(restore=False)
         self.input = inputVec
         self.out = out
 
-    def oneImgTest(self, timesToRepeat, savepaths):
+    def oneImgTest(self, timesToRepeat):
+        """ Tests if network can successfully train to recognize a single
+        number
+
+        timesToRepeat: num times image is passed through network
+        """
         errors = []
         for i in range(timesToRepeat):
             correct = 0
+            #pass image through network to calculate gradient
             self.forwardpass(self.input)
             self.backpass(self.out)
-
             self.findAllGradients(self.input)
 
+            #update weights
             [layer.update() for layer in self.layers]
+
+            #calculate network error
             errors.append(self.layers[-1].crossEntError(self.out))
 
             if np.argmax(self.layers[-1].output) == np.argmax(self.out):
                 correct = 1
             self.trainacc.append(correct*100)
-        self.trainloss = errors
-        self.plotsave(savepaths)
+        #visualize results
+        self.makePlots([errors, self.trainacc], isDebugging=True)
+
+    def numericalDiff(self, layersCopy, layer, j, k, eps, shouldSubtract):
+        """Helper function to perform numerical differentiation. Calculates
+        error of network with one component of weights matrix slightly adjusted.
+
+        layersCopy: deep copy of network
+        layer: current layer being tested
+        j, k: index of current weight component being tested
+        eps: small positive value to add/subtract from current weight
+        shouldSubtract: bool, True=eps should be subtracted. False=eps should
+        be added
+        """
+        #set eps based on whether adding or subtracting
+        if shouldSubtract:
+            eps = eps * -1
+
+        #add eps to a single weight component
+        layersCopy[layer].weights[j, k] += eps
+
+        #propagate forwards, find output of network
+        first_layer = layersCopy[0]
+        first_layer.forward(self.input)
+        for i in range(1, len(layersCopy)):
+            curr_layer = layersCopy[i]
+            prev_layer = layersCopy[i-1]
+            curr_layer.forward(prev_layer.output)
+
+        #calculate error of network
+        error = layersCopy[-1].crossEntError(self.out)
+
+        #reset weight component
+        layersCopy[layer].weights[j, k] -= eps
+        return error
 
     def gradientCheck(self):
-        # weights is the list of weight matrices
-        # inputVec and target is a single training pair
+        """
+        """
         numBroken = 0
         layers1 = copy.deepcopy(self.layers)
         layers2 = copy.deepcopy(self.layers)
@@ -698,37 +746,11 @@ class DebuggingTests(RunNetwork):
         for layer in range(len(layers1)):
             for j in range(layers1[layer].row):
                 for k in range(layers1[layer].col):
-                    # Add / subtract a small number to the current weight
-                    layers1[layer].weights[j, k] += eps
-                    layers2[layer].weights[j, k] -= eps
-
-                    # Compute the new error
-                    first_layer = layers1[0]
-                    first_layer.forward(self.input)
-                    for i in range(1, len(layers1)):
-                        curr_layer = layers1[i]
-                        prev_layer = layers1[i-1]
-                        # print(prev_layer.output.shape)
-                        curr_layer.forward(prev_layer.output)
-                    first_layer = layers2[0]
-                    first_layer.forward(self.input)
-                    for i in range(1, len(layers2)):
-                        curr_layer = layers2[i]
-                        prev_layer = layers2[i-1]
-                        curr_layer.forward(prev_layer.output)
-                    # activations1 = forwardprop(inputVec, weights1)
-                    # activations2 = forwardprop(inputVec, weights2)
-                    error1 = layers1[-1].crossEntError(self.out)
-                    error2 = layers2[-1].crossEntError(self.out)
-
-                    #remove the eps value
-                    layers1[layer].weights[j, k] -= eps
-                    layers2[layer].weights[j, k] += eps
-
+                    error1 = self.numericalDiff(layers1, layer, j, k, eps, shouldSubtract=False)
+                    error2 = self.numericalDiff(layers2, layer, j, k, eps, shouldSubtract=True)
                     # Check gradient component vs central difference
                     numGrad = self.lrate * (error1 - error2) / (2*eps)
                     grad = self.layers[layer].gradient[j, k]
-                    #print(abs(grad -numGrad))
                     if (abs(grad - numGrad) > 1e-4):
                         numBroken += 1
                         print("[", layer, ", ", j, ", ", k, "]")
@@ -743,12 +765,13 @@ if __name__ == "__main__":
     stoch = RunNetwork(data, .001, 1, [784, 625, 625, 10])
 
 
-    stoch.run(10, 100, False, savepaths)
+    # stoch.run(10, 100, False, savepaths)
 
     #FOR TESTING
-    # testimg = data.batchImg[0][0]
-    # testtarg = data.batchTar[0][0]
-    # debug = DebuggingTests(testimg, testtarg, .001, 1, [784, 200, 10])
-    # debug.oneImgTest(150, savepaths)
-    # broke = debug.gradientCheck()
-    # print(broke)
+    testimg = data.batchImg[0][0]
+    testtarg = data.batchTar[0][0]
+    print(len(testimg), len(testtarg))
+    debug = DebuggingTests(testimg, testtarg, .001, [784, 200, 10])
+    debug.oneImgTest(150)
+    broke = debug.gradientCheck()
+    print(broke)
