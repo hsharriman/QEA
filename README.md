@@ -3,7 +3,7 @@
 #### Originally created for Olin College of Engineering's Quantitative Engineering Analysis Final Project, Fall 2018
 
 ## About this Project
-This project is meant to be a deep exploration into the math behind neural networks, specifically convolutional neural networks. As such, there is no use of high-level packages such as Keras or Tensorflow, since the goal was to understand the math that drives these powerful tools. Part of the original assignment was to create a homework assignment that other students in the class could complete to gain an understanding of some aspect of the technical material necessary for the project. The pdf of this homework assignment can be found [here](https://github.com/hsharriman/QEA/blob/master/reports/QEAHomework.pdf), and the source code that accompanies the assignment can be found [here](https://github.com/hsharriman/QEA/blob/master/QEA%20Night%20Assignment.ipynb).  
+This project is meant to be a deep exploration into the math behind neural networks, specifically convolutional neural networks. As such, there is no use of high-level packages such as Keras or Tensorflow, since the goal was to understand the math that drives these powerful tools. Part of the original assignment was to create a homework assignment that other students in the class could complete to gain an understanding of some aspect of the technical material necessary for the project. The pdf of this homework assignment can be found [here](https://github.com/hsharriman/QEA/blob/master/reports/QEAHomework.pdf), and the source code that accompanies the assignment can be found [here](https://github.com/hsharriman/QEA/blob/master/QEA%20Night%20Assignment.ipynb).
 
 Additionally, the final deliverable for this project was a technical write-up detailing the necessary concepts, as well as a breakdown of the process. The writeup for this project can be found [here](https://github.com/hsharriman/QEA/blob/master/reports/QEAReport.pdf).
 ## Running the Networks
@@ -26,8 +26,10 @@ Additionally, the final deliverable for this project was a technical write-up de
     - too big: gradient not updated enough, can't learn the details
 ## Results
 Running the feedforward network results in the following training and test results:
-
-Running the convolutional neural network results in the following training and test results:
-
+<p align="center"> <img src ="https://github.com/hsharriman/QEA/blob/master/imgs/train.png"/> </p>
+<p align="center"> <img src ="https://github.com/hsharriman/QEA/blob/master/imgs/test.png"/> </p>
+Running the convolutional network in its current state on the full MNIST set causes inconsistent behaviors (the network is quite sensitive, potentially due to the way that the weights are initiated, and is prone to diverging). To illustrate this, these are the results of the network learning to recognize 2 MNIST source images. The second figure shows the results of the network learning to recognize 5 MNIST source images.
+<p align="center"> <img src ="https://github.com/hsharriman/QEA/blob/master/imgs/2pttest.png"/> </p>
+<p align="center"> <img src ="https://github.com/hsharriman/QEA/blob/master/imgs/5pttest.png"/> </p>  
 ## Next Steps
 I would like to refactor the convolutional neural network into classes and further examine what factors may be causing the network to be prone to diverging. I would also like to experiment with different types of convolutions to see if I can make the network more robust.
