@@ -25,11 +25,15 @@ Additionally, the final deliverable for this project was a technical write-up de
     - too small: gradient updates too often, likely to converge too early
     - too big: gradient not updated enough, can't learn the details
 ## Results
+#### Feedforward Network Results
 Running the feedforward network results in the following training and test results:
 <p align="center"> <img src ="https://github.com/hsharriman/QEA/blob/master/imgs/train.png"/> </p>
 <p align="center"> <img src ="https://github.com/hsharriman/QEA/blob/master/imgs/test.png"/> </p>
+
+#### Convolutional Network Results
 Running the convolutional network in its current state on the full MNIST set causes inconsistent behaviors (the network is quite sensitive, potentially due to the way that the weights are initiated, and is prone to diverging). To illustrate this, these are the results of the network learning to recognize 2 MNIST source images. The second figure shows the results of the network learning to recognize 5 MNIST source images.
 <p align="center"> <img src ="https://github.com/hsharriman/QEA/blob/master/imgs/2pttest.png"/> </p>
 <p align="center"> <img src ="https://github.com/hsharriman/QEA/blob/master/imgs/5pttest.png"/> </p>  
+
 ## Next Steps
 I would like to refactor the convolutional neural network into classes and further examine what factors may be causing the network to be prone to diverging. I would also like to experiment with different types of convolutions to see if I can make the network more robust.
